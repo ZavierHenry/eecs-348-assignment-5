@@ -133,9 +133,10 @@ class HMM:
         priors = self.priors
         trans = self.transitions
         states = self.states
-
         V = [{}]
-
+        print data
+        #data = [{'length', 1}, {'length', 0}, {'length', 1}, {'length', 0}, {'length', 1}]
+        #data = [{'length', 1}, {'length', 0}, {'length', 0}, {'length', 0}, {'length', 0}]
         for st in states:
             V[0][st] = {"prob": priors[st] * self.getEmissionProb(st, data[0]), "prev": None}
 
@@ -145,9 +146,10 @@ class HMM:
                 max_tr_prob = max(V[t-1][prev_st]['prob'] * trans[prev_st][st] for prev_st in states)
                 for prev_st in states:
                     if V[t-1][prev_st]['prob'] * trans[prev_st][st] == max_tr_prob:
-                        max_prob = max_tr_prob * self.getEmissionProb(st, data[0])
+                        max_prob = max_tr_prob * self.getEmissionProb(st, data[t])
                         V[t][st] = {'prob': max_prob,'prev' : prev_st}
                         break
+
         for line in dptable(V):
             print line
         opt = []
@@ -167,7 +169,6 @@ class HMM:
 
         print 'The steps of states are ' + ' '.join(opt) + ' with highest probability of %s' % max_prob
 
-        print "label function not yet implemented"
         return opt
     
     def getEmissionProb( self, state, features ):
@@ -597,4 +598,23 @@ def dptable(V):
 
 x = StrokeLabeler()
 x.trainHMMDir("../trainingFiles/") #../ means go back a directory
-x.labelFile("../trainingFiles/0268_2.6.1.labeled.xml", "results.txt")
+x.labelFile("../trainingFiles/0502_3.9.1.labeled.xml", "results.txt")
+#
+
+
+
+# test = HMM(['Healthy','Fever'],['Feeling'],DISCRETE, 3)
+# test.priors = {'Healthy': 0.6, 'Fever': 0.4}
+# test.transitions = {'Healthy': {'Healthy': 0.7, 'Fever': 0.3}, 'Fever': {'Healthy': 0.4, 'Fever': 0.6}}
+# test.emissions = {'Healthy': {'Feeling': [0.5, 0.4, 0.1]}, 'Fever': {'Feeling': [0.1, 0.3, 0.6]}}
+# observations = [{'Feeling': 0}, {'Feeling':1} , {'Feeling': 2}]
+# test.featuresCorD = {'Feeling': DISCRETE}
+# test.label(observations)
+
+test = HMM(['Sunny','Cloudy', 'Rainy'],['Condition'],DISCRETE, 4)
+test.priors = {'Sunny': 0.63, 'Cloudy': 0.17, 'Rainy': .20}
+test.transitions = {'Sunny': {'Sunny': 0.5, 'Cloudy': 0.25, 'Rainy':.25 }, 'Cloudy': {'Sunny': 0.375, 'Cloudy': 0.125, 'Rainy': .375}, 'Rainy': {'Sunny': 0.125, 'Cloudy': 0.675, 'Rainy':.375 }}
+test.emissions = {'Sunny': {'Condition': [0.6, 0.20, 0.15, .05]}, 'Cloudy': {'Condition': [0.25, 0.25, 0.25, 0.25]}, 'Rainy': {'Condition': [0.05, 0.10, 0.35, 0.50]}}
+observations = [{'Condition': 0}, {'Condition':2} , {'Condition': 3}]
+test.featuresCorD = {'Condition': DISCRETE}
+test.label(observations)
