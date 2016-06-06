@@ -175,7 +175,7 @@ class HMM:
         ''' Get P(features|state).
             Consider each feature independent so
             P(features|state) = P(f1|state)*P(f2|state)*...*P(fn|state). '''
-        print '\nthis is the state: ', state,'\n'
+        #print '\nthis is the state: ', state,'\n'
         prob = 1.0
         for f in features:
             if self.featuresCorD[f] == CONTINUOUS:
@@ -599,6 +599,7 @@ def dptable(V):
 x = StrokeLabeler()
 x.trainHMMDir("../trainingFiles/") #../ means go back a directory
 x.labelFile("../trainingFiles/0502_3.9.1.labeled.xml", "results.txt")
+x.labelFile("../trainingFiles/9171_3.8.1.labeled.xml", "results.txt")
 #
 
 
@@ -618,3 +619,5 @@ test.emissions = {'Sunny': {'Condition': [0.6, 0.20, 0.15, .05]}, 'Cloudy': {'Co
 observations = [{'Condition': 0}, {'Condition':2} , {'Condition': 3}]
 test.featuresCorD = {'Condition': DISCRETE}
 test.label(observations)
+
+check = [{'length': 1}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 0}, {'length': 0}, {'length': 0}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 0}, {'length': 0}, {'length': 0}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 0}, {'length': 1}, {'length': 1}]
