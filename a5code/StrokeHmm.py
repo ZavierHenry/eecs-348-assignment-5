@@ -134,7 +134,6 @@ class HMM:
         trans = self.transitions
         states = self.states
         V = [{}]
-        print data
         #data = [{'length', 1}, {'length', 0}, {'length', 1}, {'length', 0}, {'length', 1}]
         #data = [{'length', 1}, {'length', 0}, {'length', 0}, {'length', 0}, {'length', 0}]
         for st in states:
@@ -167,7 +166,7 @@ class HMM:
             opt.insert(0, V[t + 1][previous]["prev"])
             previous = V[t][previous]["prev"]
 
-        print 'The steps of states are ' + ' '.join(opt) + ' with highest probability of %s' % max_prob
+        #print 'The steps of states are ' + ' '.join(opt) + ' with highest probability of %s' % max_prob
 
         return opt
     
@@ -596,10 +595,10 @@ def dptable(V):
     for state in V[0]:
         yield "%.7s: " % state + " ".join("%.7s" % ("%f" % v[state]["prob"]) for v in V)
 
-x = StrokeLabeler()
-x.trainHMMDir("../trainingFiles/") #../ means go back a directory
-x.labelFile("../trainingFiles/0502_3.9.1.labeled.xml", "results.txt")
-x.labelFile("../trainingFiles/9171_3.8.1.labeled.xml", "results.txt")
+#x = StrokeLabeler()
+#x.trainHMMDir("../trainingFiles/") #../ means go back a directory
+#x.labelFile("../trainingFiles/0502_3.9.1.labeled.xml", "results.txt")
+#x.labelFile("../trainingFiles/9171_3.8.1.labeled.xml", "results.txt")
 #
 
 
@@ -612,12 +611,17 @@ x.labelFile("../trainingFiles/9171_3.8.1.labeled.xml", "results.txt")
 # test.featuresCorD = {'Feeling': DISCRETE}
 # test.label(observations)
 
+
+#### Test Case ####
 test = HMM(['Sunny','Cloudy', 'Rainy'],['Condition'],DISCRETE, 4)
 test.priors = {'Sunny': 0.63, 'Cloudy': 0.17, 'Rainy': .20}
 test.transitions = {'Sunny': {'Sunny': 0.5, 'Cloudy': 0.25, 'Rainy':.25 }, 'Cloudy': {'Sunny': 0.375, 'Cloudy': 0.125, 'Rainy': .375}, 'Rainy': {'Sunny': 0.125, 'Cloudy': 0.675, 'Rainy':.375 }}
 test.emissions = {'Sunny': {'Condition': [0.6, 0.20, 0.15, .05]}, 'Cloudy': {'Condition': [0.25, 0.25, 0.25, 0.25]}, 'Rainy': {'Condition': [0.05, 0.10, 0.35, 0.50]}}
 observations = [{'Condition': 0}, {'Condition':2} , {'Condition': 3}]
 test.featuresCorD = {'Condition': DISCRETE}
-test.label(observations)
 
-check = [{'length': 1}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 0}, {'length': 0}, {'length': 0}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 0}, {'length': 0}, {'length': 0}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 1}, {'length': 0}, {'length': 1}, {'length': 1}]
+if (test.label(observations) == ['Sunny', 'Rainy', 'Rainy']):
+    print "Test Passed"
+else:
+    print "Test Failed"
+
