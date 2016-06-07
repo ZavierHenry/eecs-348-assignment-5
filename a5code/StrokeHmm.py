@@ -8,6 +8,7 @@ import random
 # A couple contants
 CONTINUOUS = 0
 DISCRETE = 1
+collect = []
 def chunkify(lst,n):
     return [ lst[i::n] for i in xrange(n) ]
 
@@ -220,8 +221,8 @@ class StrokeLabeler:
         # numFVals is a dictionary specifying the number of legal values for
         #    each discrete feature
         self.featureNames = ['length','curvature']
-        self.contOrDisc = {'length': DISCRETE, 'curvature': CONTINUOUS}
-        self.numFVals = { 'length': 2}
+        self.contOrDisc = {'length': DISCRETE, 'curvature': DISCRETE}
+        self.numFVals = { 'length': 2, 'curvature': 3}
 
     def featurefy( self, strokes ):
         ''' Converts the list of strokes into a list of feature dictionaries
@@ -253,8 +254,19 @@ class StrokeLabeler:
                 d['length'] = 0
             else:
                 d['length'] = 1
-
+            global collect
+            collect.append(s.sumOfCurvature())
             d['curvature'] = s.sumOfCurvature()
+
+            if s.sumOfCurvature() > -0.0280159079094 + (0.12864125126 * .5): # Above the standard deviation
+                d['curvature'] = 2
+            elif s.sumOfCurvature  < -0.0280159079094 - (0.12864125126 * .5): # Below the standard deviation
+                d['curvature'] = 1
+            else:
+                d['curvature'] = 0 # Nuetral zone... boundaries gathered by taking the average curvature and std that appear in all examples
+
+            # Curvature Average:  -0.0280159079094
+            # Curvature Standard Deviation:  0.12864125126
 
             # We can add more features here just by adding them to the dictionary
             # d as we did with length.  Remember that when you add features,
@@ -308,7 +320,7 @@ class StrokeLabeler:
 
         return {'drawing': {'drawing': drawingCor, 'text': drawingW}, 'text': {'drawing': textW, 'text': textCor}}
 
-    def classify(self, trainingDir, numTrain):
+    def classify(self, trainingDir, numFolds):
 
         for fFileObj in os.walk(trainingDir):
             lFileList = fFileObj[2]
@@ -324,10 +336,10 @@ class StrokeLabeler:
         rLabels = []
 
         random.shuffle(allfiles)
-        subsec = chunkify(allfiles, 10) #Splits the data into 10 equal parts
+        subsec = chunkify(allfiles, numFolds) #Splits the data into 10 equal parts
 
         print "Crossfolding...."
-        for i in range(10):
+        for i in range(numFolds):
             print "Crossfold " + str(i + 1) + " results: "
             self.trainHMM([name for index, names in enumerate(subsec) for name in names if index != i]) #Trains with 90 percent of the data
             for test in subsec[i]: #Test with 90 percent of the data
@@ -659,7 +671,7 @@ def dptable(V):
         yield "%.7s: " % state + " ".join("%.7s" % ("%f" % v[state]["prob"]) for v in V)
 
 x = StrokeLabeler()
-x.classify("../trainingFiles/", 45)
+x.classify("../trainingFiles/", 5) #Training files directory and number of desired folds
 #x.trainHMMDir("../trainingFiles/") #../ means go back a directory
 #x.labelFile("../trainingFiles/0502_3.9.1.labeled.xml", "results.txt")
 #x.labelFile("../trainingFiles/9171_3.8.1.labeled.xml", "results.txt")
@@ -690,3 +702,6 @@ if (test.label(observations) == ['Sunny', 'Rainy', 'Rainy']):
 else:
     print "Test Failed"
 
+import numpy
+print "Curvature Average: ", numpy.average(collect)
+print "Curvature Standard Deviation: ", numpy.std(collect)
