@@ -220,9 +220,9 @@ class StrokeLabeler:
         #    name to whether it is continuous or discrete
         # numFVals is a dictionary specifying the number of legal values for
         #    each discrete feature
-        self.featureNames = ['length','curvature']
-        self.contOrDisc = {'length': DISCRETE, 'curvature': DISCRETE}
-        self.numFVals = { 'length': 2, 'curvature': 3}
+        self.featureNames = ['length','curvature', 'boxArea', 'aspect']
+        self.contOrDisc = {'length': DISCRETE, 'curvature': DISCRETE, 'boxArea': DISCRETE, 'aspect': DISCRETE}
+        self.numFVals = { 'length': 2, 'curvature': 2, 'boxArea': 2, 'aspect': 2}
 
     def featurefy( self, strokes ):
         ''' Converts the list of strokes into a list of feature dictionaries
@@ -255,18 +255,47 @@ class StrokeLabeler:
             else:
                 d['length'] = 1
             global collect
-            collect.append(s.sumOfCurvature())
-            d['curvature'] = s.sumOfCurvature()
 
-            if s.sumOfCurvature() > -0.0280159079094 + (0.12864125126 * .5): # Above the standard deviation
-                d['curvature'] = 2
-            elif s.sumOfCurvature  < -0.0280159079094 - (0.12864125126 * .5): # Below the standard deviation
-                d['curvature'] = 1
+            collect.append(s.boxAspectRatio())
+
+            boxArea = s.boxArea()
+
+
+            if boxArea < 12120.5:
+                d['boxArea'] = 0
             else:
-                d['curvature'] = 0 # Nuetral zone... boundaries gathered by taking the average curvature and std that appear in all examples
+                d['boxArea'] = 1
 
-            # Curvature Average:  -0.0280159079094
-            # Curvature Standard Deviation:  0.12864125126
+            aspect = s.boxAspectRatio()
+
+            if aspect < 1.03448275862:
+                d['aspect'] = 0
+            else:
+                d['aspect'] = 1
+
+            if s.sumOfCurvature(abs) < 0.213509314634: # Above the standard deviation
+                d['curvature'] = 0
+            else:
+                d['curvature'] = 1
+
+            # Aspect Ratio Average:  3.13686434228
+            # Aspect Ratio Median:  1.03448275862
+            # Aspect Ratio Max:  104.5
+            # Aspect Ratio Standard Deviation:  6.9336164541
+
+            # Curvature Average:  0.223115424766
+            # Curvature Standard Deviation:  0.0942396422484
+
+            # Box Area Average:  58493.0271449
+            # Box Area Meadian:  12120.5
+            # Box Area Max:  3305737.0
+            # Box Standard Deviation:  172129.075146
+
+            # Curvature Area Average:  0.223115424766
+            # Curvature Area Meadian:  0.213509314634
+            # Curvature Area Max:  0.758175246525
+            # Curvature Standard Deviation:  0.0942396422484
+
 
             # We can add more features here just by adding them to the dictionary
             # d as we did with length.  Remember that when you add features,
@@ -612,6 +641,37 @@ class Stroke:
             prev = p
         return ret
 
+    def boxAspectRatio(self): #Height Wodth Aspect Ratio
+        maxX = float(self.points[0][0])
+        maxY = float(self.points[0][1])
+
+        minX = float(self.points[0][0])
+        minY = float(self.points[0][1])
+
+        for p in self.points[1:]:
+            minX = min(minX, float(p[0]))
+            maxX = max(maxX, float(p[0]))
+            minY = min(minY, float(p[1]))
+            maxY = max(maxY, float(p[1]))
+
+        return (((maxY - minY) + 1) / ((maxX - minX) +1))
+
+    def boxArea(self):
+
+        maxX = float(self.points[0][0])
+        maxY = float(self.points[0][1])
+
+        minX = float(self.points[0][0])
+        minY = float(self.points[0][1])
+
+        for p in self.points[1:]:
+            minX = min(minX, float(p[0]))
+            maxX = max(maxX, float(p[0]))
+            minY = min(minY, float(p[1]))
+            maxY = max(maxY, float(p[1]))
+
+        return ((maxX - minX) * (maxY - minY)) + 1 #Smooth in the case that there is one point
+
 
 
     def sumOfCurvature(self, func=lambda x: x, skip=1):
@@ -671,7 +731,7 @@ def dptable(V):
         yield "%.7s: " % state + " ".join("%.7s" % ("%f" % v[state]["prob"]) for v in V)
 
 x = StrokeLabeler()
-x.classify("../trainingFiles/", 5) #Training files directory and number of desired folds
+x.classify("../trainingFiles/", 2) #Training files directory and number of desired folds
 #x.trainHMMDir("../trainingFiles/") #../ means go back a directory
 #x.labelFile("../trainingFiles/0502_3.9.1.labeled.xml", "results.txt")
 #x.labelFile("../trainingFiles/9171_3.8.1.labeled.xml", "results.txt")
@@ -703,5 +763,7 @@ else:
     print "Test Failed"
 
 import numpy
-print "Curvature Average: ", numpy.average(collect)
-print "Curvature Standard Deviation: ", numpy.std(collect)
+print "Aspect Ratio Average: ", numpy.average(collect)
+print "Aspect Ratio Median: ", numpy.median(collect)
+print "Aspect Ratio Max: ", numpy.max(collect)
+print "Aspect Ratio Standard Deviation: ", numpy.std(collect)
