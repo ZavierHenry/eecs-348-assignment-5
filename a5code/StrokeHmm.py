@@ -132,43 +132,38 @@ class HMM:
     def label( self, data):
         ''' Find the most likely labels for the sequence of data
             This is an implementation of the Viterbi algorithm  '''
-        # You will implement this function
 
         priors = self.priors
         trans = self.transitions
         states = self.states
-        V = [{}]
-        #data = [{'length', 1}, {'length', 0}, {'length', 1}, {'length', 0}, {'length', 1}]
-        #data = [{'length', 1}, {'length', 0}, {'length', 0}, {'length', 0}, {'length', 0}]
-        for st in states:
-            V[0][st] = {"prob": priors[st] * self.getEmissionProb(st, data[0]), "prev": None}
+        container = [{}]
 
-        for t in range(1, len(data)):
-            V.append({})
+        for state in states:
+            container[0][state] = {"prob": priors[state] * self.getEmissionProb(state, data[0]), "prev": None}
+
+        for i in range(1, len(data)):
+            container.append({})
             for st in states:
-                max_tr_prob = max(V[t-1][prev_st]['prob'] * trans[prev_st][st] for prev_st in states)
+                max_transitive_prob = max(container[i-1][prev_st]['prob'] * trans[prev_st][st] for prev_st in states)
                 for prev_st in states:
-                    if V[t-1][prev_st]['prob'] * trans[prev_st][st] == max_tr_prob:
-                        max_prob = max_tr_prob * self.getEmissionProb(st, data[t])
-                        V[t][st] = {'prob': max_prob,'prev' : prev_st}
+                    if container[i-1][prev_st]['prob'] * trans[prev_st][st] == max_transitive_prob:
+                        max_prob = max_transitive_prob * self.getEmissionProb(st, data[i])
+                        container[i][st] = {'prob': max_prob,'prev' : prev_st}
                         break
-
-        # for line in dptable(V):
-        #     print line
         opt = []
         # The highest probability
-        max_prob = max(value["prob"] for value in V[-1].values())
+        max_prob = max(value["prob"] for value in container[-1].values())
         previous = None
         # Get most probable state and its backtrack
-        for st, data in V[-1].items():
+        for st, data in container[-1].items():
             if data["prob"] == max_prob:
                 opt.append(st)
                 previous = st
                 break
         # Follow the backtrack till the first observation
-        for t in range(len(V) - 2, -1, -1):
-            opt.insert(0, V[t + 1][previous]["prev"])
-            previous = V[t][previous]["prev"]
+        for t in range(len(container) - 2, -1, -1):
+            opt.insert(0, container[t + 1][previous]["prev"])
+            previous = container[t][previous]["prev"]
 
         #print 'The steps of states are ' + ' '.join(opt) + ' with highest probability of %s' % max_prob
 
@@ -642,7 +637,7 @@ class Stroke:
             prev = p
         return ret
 
-    def boxAspectRatio(self): #Height Wodth Aspect Ratio
+    def boxAspectRatio(self): #Height Width Aspect Ratio
         maxX = float(self.points[0][0])
         maxY = float(self.points[0][1])
 
@@ -654,8 +649,10 @@ class Stroke:
             maxX = max(maxX, float(p[0]))
             minY = min(minY, float(p[1]))
             maxY = max(maxY, float(p[1]))
-
-        return (((maxY - minY) + 1) / ((maxX - minX) +1))
+        if ((maxY - minY) == 0.0) or ((maxX - minX) == 0.0):
+            return 1
+        else:
+            return (maxY - minY) / (maxX - minX)
 
     def boxArea(self):
 
@@ -671,7 +668,10 @@ class Stroke:
             minY = min(minY, float(p[1]))
             maxY = max(maxY, float(p[1]))
 
-        return ((maxX - minX) * (maxY - minY)) + 1 #Smooth in the case that there is one point
+        if ((maxY - minY) is 0) or ((maxX - minX) is 0):
+            return 1
+        else:
+            return (maxY - minY) * (maxX - minX)
 
     def topBottom(self):
         maxY = float(self.points[0][1])
@@ -681,7 +681,7 @@ class Stroke:
             minY = min(minY, float(p[1]))
             maxY = max(maxY, float(p[1]))
         return (maxY - minY)
-    
+
     def leftRight(self):
         maxX = float(self.points[0][0])
         minX = float(self.points[0][0])

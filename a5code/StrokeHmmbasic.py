@@ -306,7 +306,7 @@ class StrokeLabeler:
 
         return {'drawing': {'drawing': drawingCor, 'text': drawingW}, 'text': {'drawing': textW, 'text': textCor}}
 
-    def classify(self, trainingDir, numTrain):
+    def classify(self, trainingDir, numFold):
 
         for fFileObj in os.walk(trainingDir):
             lFileList = fFileObj[2]
@@ -322,10 +322,10 @@ class StrokeLabeler:
         rLabels = []
 
         random.shuffle(allfiles)
-        subsec = chunkify(allfiles, 10) #Splits the data into 10 equal parts
+        subsec = chunkify(allfiles, numFold) #Splits the data into 10 equal parts
 
         print "Crossfolding...."
-        for i in range(10):
+        for i in range(numFold):
             print "Crossfold " + str(i + 1) + " results: "
             self.trainHMM([name for index, names in enumerate(subsec) for name in names if index != i]) #Trains with 90 percent of the data
             for test in subsec[i]: #Test with 90 percent of the data
@@ -657,7 +657,9 @@ def dptable(V):
         yield "%.7s: " % state + " ".join("%.7s" % ("%f" % v[state]["prob"]) for v in V)
 
 x = StrokeLabeler()
-x.classify("../trainingFiles/", 45)
+x.classify("../trainingFiles/", 2)
+
+
 #x.trainHMMDir("../trainingFiles/") #../ means go back a directory
 #x.labelFile("../trainingFiles/0502_3.9.1.labeled.xml", "results.txt")
 #x.labelFile("../trainingFiles/9171_3.8.1.labeled.xml", "results.txt")
