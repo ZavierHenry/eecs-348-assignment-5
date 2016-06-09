@@ -250,18 +250,19 @@ class StrokeLabeler:
             # to use a principled approach (i.e., look at the data) rather
             # than just guessing.
             l = s.length()
+            #d['length'] = l
             if l < 300:
                 d['length'] = 0
             else:
                 d['length'] = 1
             global collect
 
-            collect.append(s.boxAspectRatio())
+            collect.append(l)
 
             boxArea = s.boxArea()
 
 
-            if boxArea < 12120.5:
+            if boxArea < 12120.5 - 1000:
                 d['boxArea'] = 0
             else:
                 d['boxArea'] = 1
@@ -369,7 +370,7 @@ class StrokeLabeler:
 
         print "Crossfolding...."
         for i in range(numFolds):
-            print "Crossfold " + str(i + 1) + " results: "
+            print "Crossfold " + str(i + 1) + " : "
             self.trainHMM([name for index, names in enumerate(subsec) for name in names if index != i]) #Trains with 90 percent of the data
             for test in subsec[i]: #Test with 90 percent of the data
                 strokes = self.loadStrokeFile(test)
@@ -672,7 +673,23 @@ class Stroke:
 
         return ((maxX - minX) * (maxY - minY)) + 1 #Smooth in the case that there is one point
 
+    def topBottom(self):
+        maxY = float(self.points[0][1])
+        minY = float(self.points[0][1])
 
+        for p in self.points[1:]:
+            minY = min(minY, float(p[1]))
+            maxY = max(maxY, float(p[1]))
+        return (maxY - minY)
+    
+    def leftRight(self):
+        maxX = float(self.points[0][0])
+        minX = float(self.points[0][0])
+
+        for p in self.points[1:]:
+            minX = min(minX, float(p[1]))
+            maxX = max(maxX, float(p[1]))
+        return (maxX - minX)
 
     def sumOfCurvature(self, func=lambda x: x, skip=1):
         ''' Return the normalized sum of curvature for a stroke.
