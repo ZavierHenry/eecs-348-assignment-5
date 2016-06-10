@@ -136,34 +136,57 @@ class HMM:
         priors = self.priors
         trans = self.transitions
         states = self.states
-        container = [{}]
+        
+        # for state in states:
+            # container[0][state] = {"prob": priors[state] * self.getEmissionProb(state, data[0]), "prev": None}
+        
+            
+        container = [{state: {"prob": priors[state] * self.getEmissionProb(state, data[0]), "prev": None} for state in states }]
+            
+            
 
-        for state in states:
-            container[0][state] = {"prob": priors[state] * self.getEmissionProb(state, data[0]), "prev": None}
-
+        # for i in range(1, len(data)):
+        #     container.append({})
+        #     for st in states:
+        #         max_transitive_prob = max(container[i-1][prev_st]['prob'] * trans[prev_st][st] for prev_st in states)
+        #         max_prob = max_transitive_prob * self.getEmissionProb(st, data[i])
+        #         container[i][st] = {'prob': max_prob}
+        #         for prev_st in states:
+        #             if container[i-1][prev_st]['prob'] * trans[prev_st][st] == max_transitive_prob:
+        #                 container[i][st]['prev'] = prev_st
+        #                 break
+                    
         for i in range(1, len(data)):
             container.append({})
             for st in states:
-                max_transitive_prob = max(container[i-1][prev_st]['prob'] * trans[prev_st][st] for prev_st in states)
-                for prev_st in states:
-                    if container[i-1][prev_st]['prob'] * trans[prev_st][st] == max_transitive_prob:
-                        max_prob = max_transitive_prob * self.getEmissionProb(st, data[i])
-                        container[i][st] = {'prob': max_prob,'prev' : prev_st}
-                        break
-        opt = []
+                prev_st = max(states, key=lambda x: container[i-1][x]['prob'] * trans[x][st])
+                max_prob = container[i-1][prev_st]['prob'] * trans[prev_st][st] * self.getEmissionProb(st, data[i])
+                container[i][st] = {'prob': max_prob, 'prev': prev_st}
+            
+        
+        
+
+        # get most probable state and its backtrack
+        previous = max(container[-1], key=lambda x: container[-1][x]["prob"])
+        opt = [previous]
+
         # The highest probability
-        max_prob = max(value["prob"] for value in container[-1].values())
-        previous = None
+        # max_prob = max(value["prob"] for value in container[-1].values())
+        
+        
         # Get most probable state and its backtrack
-        for st, data in container[-1].items():
-            if data["prob"] == max_prob:
-                opt.append(st)
-                previous = st
-                break
+        # for st, data in container[-1].items():
+             # if data["prob"] == max_prob:
+                # opt = [st]
+                # previous = st
+                # break
+            
         # Follow the backtrack till the first observation
         for t in range(len(container) - 2, -1, -1):
             opt.insert(0, container[t + 1][previous]["prev"])
             previous = container[t][previous]["prev"]
+            
+        
 
         #print 'The steps of states are ' + ' '.join(opt) + ' with highest probability of %s' % max_prob
 
@@ -748,7 +771,7 @@ def dptable(V):
         yield "%.7s: " % state + " ".join("%.7s" % ("%f" % v[state]["prob"]) for v in V)
 
 x = StrokeLabeler()
-x.classify("../trainingFiles/", 2) #Training files directory and number of desired folds
+# x.classify("../trainingFiles/", 2) #Training files directory and number of desired folds
 #x.trainHMMDir("../trainingFiles/") #../ means go back a directory
 #x.labelFile("../trainingFiles/0502_3.9.1.labeled.xml", "results.txt")
 #x.labelFile("../trainingFiles/9171_3.8.1.labeled.xml", "results.txt")
