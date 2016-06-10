@@ -215,9 +215,13 @@ class StrokeLabeler:
         #    name to whether it is continuous or discrete
         # numFVals is a dictionary specifying the number of legal values for
         #    each discrete feature
-        self.featureNames = ['length','curvature', 'boxArea', 'aspect']
-        self.contOrDisc = {'length': DISCRETE, 'curvature': DISCRETE, 'boxArea': DISCRETE, 'aspect': DISCRETE}
-        self.numFVals = { 'length': 2, 'curvature': 2, 'boxArea': 2, 'aspect': 2}
+        self.featureNames = ['length', 'curvature', 'aspect', 'height']
+        self.contOrDisc = {'length': DISCRETE, 'curvature': DISCRETE, 'aspect': DISCRETE, 'height': DISCRETE}
+        self.numFVals = { 'length': 2, 'curvature': 3, 'aspect': 2, 'height': 2}
+
+        # self.featureNames = ['length','curvature', 'boxArea', 'aspect']
+        # self.contOrDisc = {'length': DISCRETE, 'curvature': DISCRETE, 'boxArea': DISCRETE, 'aspect': DISCRETE}
+        # self.numFVals = { 'length': 2, 'curvature': 2, 'boxArea': 2, 'aspect': 2}
 
     def featurefy( self, strokes ):
         ''' Converts the list of strokes into a list of feature dictionaries
@@ -252,27 +256,35 @@ class StrokeLabeler:
                 d['length'] = 1
             global collect
 
-            collect.append(l)
+            height = s.topBottom()
+            collect.append(height)
+            #
+            if height > 50:
+                d['height'] = 0
+            else:
+                d['height'] = 1
 
             boxArea = s.boxArea()
 
 
-            if boxArea < 12120.5 - 1000:
-                d['boxArea'] = 0
-            else:
-                d['boxArea'] = 1
-
+            # if boxArea < 12120.5 - 1000:
+            #     d['boxArea'] = 0
+            # else:
+            #     d['boxArea'] = 1
+            # #
             aspect = s.boxAspectRatio()
-
-            if aspect < 1.03448275862:
+            #
+            if aspect > .5:
                 d['aspect'] = 0
             else:
                 d['aspect'] = 1
-
-            if s.sumOfCurvature(abs) < 0.213509314634: # Above the standard deviation
+            # #
+            if s.sumOfCurvature(abs) < 0.02: # Above the standard deviation
                 d['curvature'] = 0
-            else:
+            elif s.sumOfCurvature(abs) < 0.3:
                 d['curvature'] = 1
+            else:
+                d['curvature'] = 2
 
             # Aspect Ratio Average:  3.13686434228
             # Aspect Ratio Median:  1.03448275862
@@ -341,7 +353,7 @@ class StrokeLabeler:
                     textW += 1
         print "True Label \t Classified as Drawing \t Classified as Text \t Percent Correct"
         print "Drawing\t\t\t\t" + str(drawingCor) + "\t\t\t\t\t" + str(drawingW) + "\t\t\t\t" + str(round((drawingCor/drawingTot) * 100, 2)) + " %"
-        print "Text\t\t\t\t" + str(textCor) + "\t\t\t\t\t" + str(textW) + "\t\t\t\t" + str(round((textCor/textTot) * 100, 2)) + " %"
+        print "Text\t\t\t\t" + str(textW) + "\t\t\t\t\t" + str(textCor) + "\t\t\t\t" + str(round((textCor/textTot) * 100, 2)) + " %"
 
         return {'drawing': {'drawing': drawingCor, 'text': drawingW}, 'text': {'drawing': textW, 'text': textCor}}
 
@@ -748,7 +760,7 @@ def dptable(V):
         yield "%.7s: " % state + " ".join("%.7s" % ("%f" % v[state]["prob"]) for v in V)
 
 x = StrokeLabeler()
-x.classify("../trainingFiles/", 2) #Training files directory and number of desired folds
+x.classify("../trainingFiles/", 5) #Training files directory and number of desired folds
 #x.trainHMMDir("../trainingFiles/") #../ means go back a directory
 #x.labelFile("../trainingFiles/0502_3.9.1.labeled.xml", "results.txt")
 #x.labelFile("../trainingFiles/9171_3.8.1.labeled.xml", "results.txt")
